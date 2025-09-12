@@ -3,6 +3,7 @@
   <uses-permission android:name="android.permission.BODY_SENSORS" />
   <application android:label="WearProto" android:allowBackup="false">
     <activity android:name=".MainActivity">
+       android:exported="true" 
       <intent-filter>
         <action android:name="android.intent.action.MAIN"/>
         <category android:name="android.intent.category.LAUNCHER"/>
@@ -15,3 +16,4 @@
     </service>
   </application>
 </manifest>
+
