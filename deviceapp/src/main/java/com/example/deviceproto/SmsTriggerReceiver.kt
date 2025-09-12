@@ -62,13 +62,19 @@ class SmsTriggerReceiver: BroadcastReceiver() {
   String.format(java.util.Locale.US, "NOT AVAILABLE date=%s time=%s", date, time)
 }
 
-        }
-        SmsManager.getDefault().sendTextMessage(from, null, resp, null, null)
-        Log.i("SmsTrigger","Sent: "+resp)
+         }
+         SmsManager.getDefault().sendTextMessage(from, null, resp, null, null)
+         Log.i("SmsTrigger","Sent: "+resp)
       } catch (_: Throwable) {
       } finally {
-        pending.finish()
+         pending.finish()
       }
+
+
+
+
+
+
     }.start()
   }
 }
