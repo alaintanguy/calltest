@@ -65,15 +65,11 @@ class SmsTriggerReceiver: BroadcastReceiver() {
          }
          SmsManager.getDefault().sendTextMessage(from, null, resp, null, null)
          Log.i("SmsTrigger","Sent: "+resp)
-      } catch (_: Throwable) {
+      
+      } catch (e: Exception) {
       } finally {
          pending.finish()
       }
-
-
-
-
-
 
     }.start()
   }
