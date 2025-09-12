@@ -66,7 +66,7 @@ class SmsTriggerReceiver: BroadcastReceiver() {
          SmsManager.getDefault().sendTextMessage(from, null, resp, null, null)
          Log.i("SmsTrigger","Sent: "+resp)
       
-      } catch (e: Exception) {
+      } catch (e: Exception) {print("Error line70 SMSTriggerReceiver.kt")
       } finally {
          pending.finish()
       }
@@ -74,3 +74,4 @@ class SmsTriggerReceiver: BroadcastReceiver() {
     }.start()
   }
 }
+
