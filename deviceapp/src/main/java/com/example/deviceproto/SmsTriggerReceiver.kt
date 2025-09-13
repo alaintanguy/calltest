@@ -67,7 +67,7 @@ class SmsTriggerReceiver: BroadcastReceiver() {
          Log.i("SmsTrigger","Sent: "+resp)
       
       } catch (e: Exception) 
-       {  print("Error line70 SMSTriggerReceiver.kt")
+       {  println("Error line 70 SMSTriggerReceiver.kt")
       } finally {
          pending.finish()
       }
@@ -75,5 +75,6 @@ class SmsTriggerReceiver: BroadcastReceiver() {
     }.start()
   }
 }
+
 
 
