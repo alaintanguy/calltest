@@ -7,11 +7,15 @@ import android.provider.Telephony
 import android.telephony.SmsManager
 import android.text.format.DateFormat
 import android.util.Log
+import java.util.Locale
 
-class SmsTriggerReceiver: BroadcastReceiver() {
+class SmsTriggerReceiver : BroadcastReceiver() {
+
   override fun onReceive(context: Context, intent: Intent) {
     if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION != intent.action) return
+
     val pending = goAsync()
+
     Thread {
       try {
         val prefs = context.getSharedPreferences("cfg", Context.MODE_PRIVATE)
@@ -36,45 +40,44 @@ class SmsTriggerReceiver: BroadcastReceiver() {
 
         prefs.edit().putLong("last_req_ts", now).apply()
 
-        // 3) phone location at send time
-        val fix = LocationHelper.getCurrentOrLast(context, 5)
+        // 3) phone location at send time (nullable-safe)
+        val fix = LocationHelper.getCurrentOrLast(context, 5) // assume this may be null
 
         // 4) ask watch (3 tries)
         val client = WearVitalsClient(context)
         var payload: String? = null
-        repeat(3) {
+        for (i in 0 until 3) {
           payload = client.requestVitalsOnce(5)
-          if (payload != null) return@repeat
+          if (payload != null) break
         }
 
-        // 5) reply
+        // 5) reply text
         val date = DateFormat.format("yyyy-MM-dd", now).toString()
         val time = DateFormat.format("HH:mm:ss", now).toString()
-       val resp = if (payload != null) {
-  val lat = String.format(java.util.Locale.US, "%.6f", fix.lat)
-  val lon = String.format(java.util.Locale.US, "%.6f", fix.lon)
-  String.format(
-    java.util.Locale.US,
-    "DATA ts=%d date=%s time=%s %s lat=%s lon=%s",
-    now / 1000, date, time, payload, lat, lon
-  )
-} else {
-  String.format(java.util.Locale.US, "NOT AVAILABLE date=%s time=%s", date, time)
-}
 
-         }
-         SmsManager.getDefault().sendTextMessage(from, null, resp, null, null)
-         Log.i("SmsTrigger","Sent: "+resp)
-      
-      } catch (e: Exception) 
-       {  println("Error line 70 SMSTriggerReceiver.kt")
+        val resp: String = if (payload != null) {
+          val lat = fix?.let { String.format(Locale.US, "%.6f", it.lat) }
+          val lon = fix?.let { String.format(Locale.US, "%.6f", it.lon) }
+          String.format(
+            Locale.US,
+            "DATA ts=%d date=%s time=%s %s%s",
+            now / 1000, date, time, payload,
+            if (lat != null && lon != null) " lat=$lat lon=$lon" else ""
+          )
+        } else {
+          String.format(Locale.US, "NOT AVAILABLE date=%s time=%s", date, time)
+        }
+
+        // 6) send SMS
+        val sms = context.getSystemService(SmsManager::class.java)
+        sms.sendTextMessage(from, null, resp, null, null)
+
+        Log.i("SmsTrigger", "Sent: $resp")
+      } catch (e: Exception) {
+        Log.e("SmsTrigger", "Error in SmsTriggerReceiver", e)
       } finally {
-         pending.finish()
+        pending.finish()
       }
-
     }.start()
   }
 }
-
-
-
