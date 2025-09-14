@@ -2,14 +2,14 @@
   <uses-feature android:name="android.hardware.type.watch" />
   <uses-permission android:name="android.permission.BODY_SENSORS" />
   <application android:label="WearProto" android:allowBackup="false">
-   <activity>
-    android:name="com.example.wearproto.MainActivity"
-    android:exported="true"
-      <intent-filter>
-        <action android:name="android.intent.action.MAIN"/>
-        <category android:name="android.intent.category.LAUNCHER"/>
-      </intent-filter>
-    </activity>
+  <activity
+  android:name="com.example.wearproto.MainActivity"
+  android:exported="true">
+  <intent-filter>
+    <action android:name="android.intent.action.MAIN"/>
+    <category android:name="android.intent.category.LAUNCHER"/>
+  </intent-filter>
+</activity>    
     <service android:name=".WearMsgService" android:exported="true">
       <intent-filter>
         <action android:name="com.google.android.gms.wearable.BIND_LISTENER"/>
@@ -17,6 +17,7 @@
     </service>
   </application>
 </manifest>
+
 
 
 
