@@ -1,51 +1,19 @@
-name: Build APKs
-on:
-  workflow_dispatch: {}      # manual "Run workflow" button
-  push:
-    branches: [ main ]
+- name: List APKs found
+  run: |
+    echo "---- deviceapp APKs ----"
+    find deviceapp/build/outputs/apk -name "*.apk" -ls || true
+    echo "---- wearapp APKs ----"
+    find wearapp/build/outputs/apk -name "*.apk" -ls || true
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+- name: Collect APKs
+  run: |
+    mkdir -p export
+    cp -r deviceapp/build/outputs/apk/debug/*.apk export/ || true
+    cp -r wearapp/build/outputs/apk/debug/*.apk export/ || true
+    ls -la export
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept licenses
-        run: yes | sdkmanager --licenses
-
-      - name: Install platforms & build tools
-        run: sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-
-      - name: Write local.properties
-        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-
-      - name: Build APKs (Gradle 8.7)
-        uses: gradle/gradle-build-action@v3
-        with:
-          gradle-version: '8.7'
-          arguments: ':deviceapp:assembleDebug :wearapp:assembleDebug'
-
-      - name: List APKs found
-        run: |
-          echo "---- deviceapp APKs ----"
-          find deviceapp/build/outputs/apk -name "*.apk" -ls || true
-          echo "---- wearapp APKs ----"
-          find wearapp/build/outputs/apk -name "*.apk" -ls || true
-
-      - name: Upload APKs
-        uses: actions/upload-artifact@v4
-        with:
-          name: APKs
-          path: |
-            deviceapp/build/outputs/apk/**/*.apk
-            wearapp/build/outputs/apk/**/*.apk
+- name: Upload APKs
+  uses: actions/upload-artifact@v4
+  with:
+    name: APKs
+    path: export/*.apk
