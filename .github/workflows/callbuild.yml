@@ -2,7 +2,7 @@ name: Build APKs
 on:
   workflow_dispatch: {}      # manual "Run workflow"
   push:
-    branches: [ main ]       # also appears after a push to main
+    branches: [ main ]       # also shows after push to main
 
 jobs:
   build:
@@ -29,30 +29,36 @@ jobs:
       - name: Write local.properties
         run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
-      - name: Build debug APKs (full log)
-        run: |
-          ./gradlew :deviceapp:assembleDebug :wearapp:assembleDebug --no-daemon \
-            --stacktrace --warning-mode all 2>&1 | tee build.log
-
-      - name: List APKs found
-        if: always()
-        run: |
-          echo "---- deviceapp APKs ----"
-          find deviceapp/build/outputs/apk -name "*.apk" -ls || true
-          echo "---- wearapp APKs ----"
-          find wearapp/build/outputs/apk -name "*.apk" -ls || true
-
-      - name: Upload build.log
-        if: always()
-        uses: actions/upload-artifact@v4
+      # Use the Gradle Action so we DON'T need a gradle wrapper in the repo
+      - name: Build APKs (Gradle 8.7)
+        uses: gradle/gradle-build-action@v3
         with:
-          name: build-log
-          path: build.log
+          gradle-version: '8.7'
+          arguments: ':deviceapp:assembleDebug :wearapp:assembleDebug'
 
-      - name: Upload APKs (robust glob)
-        if: success()
+      # Show exactly where (and if) APKs were created
+      - name: List APKs found
+        run: |
+          echo "---- searching under build/outputs/apk ----"
+          find . -path "*/build/outputs/apk/*.apk" -o -path "*/build/outputs/apk/*/*.apk" -ls || true
+          echo "---- full tree for modules ----"
+          ls -la deviceapp/build/outputs || true
+          ls -la wearapp/build/outputs || true
+
+      # Upload ANY apks found anywhere in the standard outputs tree
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
           name: APKs
           path: |
             **/build/outputs/apk/**/*.apk
+          if-no-files-found: warn
+
+      # Always upload the build log from the Gradle user home (for debugging)
+      - name: Upload build-log (optional)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: "**/build/reports/**"
+          if-no-files-found: ignore
