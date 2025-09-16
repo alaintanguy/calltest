@@ -1,72 +1,11 @@
-name: Build APKs
-on:
-  workflow_dispatch: {}
-  push:
-    branches: [ main ]
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Accept licenses
-        run: yes | sdkmanager --licenses
-
-      - name: Install platforms & build tools
-        run: sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
-
-      - name: Write local.properties
-        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-
-      - name: Sanity check project layout
+      - name: List APKs found (where did Gradle put them?)
         run: |
-          echo "Root tree:"
-          ls -la
-          echo "---- settings.gradle.kts ----"
-          sed -n '1,200p' settings.gradle.kts
+          echo "---- Searching for APKs ----"
+          find . -path "*/build/outputs/apk/*.apk" -o -path "*/build/outputs/apk/*/*.apk" -ls || true
 
-      - name: Build APKs (full log)
-        run: |
-          ./gradlew :deviceapp:assembleDebug :wearapp:assembleDebug \
-            --stacktrace --warning-mode all --no-daemon --no-build-cache 2>&1 | tee build.log
-
-      - name: List APKs found
-        if: always()
-        run: |
-          echo "---- deviceapp APKs ----"
-          find deviceapp/build/outputs/apk -name "*.apk" -ls || true
-          echo "---- wearapp APKs ----"
-          find wearapp/build/outputs/apk -name "*.apk" -ls || true
-
-      - name: Collect APKs
-        if: success()
-        run: |
-          mkdir -p export
-          cp deviceapp/build/outputs/apk/debug/*.apk export/ 2>/dev/null || true
-          cp wearapp/build/outputs/apk/debug/*.apk export/ 2>/dev/null || true
-          ls -la export
-
-      - name: Upload build.log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build.log
-
-      - name: Upload APKs
-        if: success()
+      - name: Upload APKs (robust glob)
         uses: actions/upload-artifact@v4
         with:
           name: APKs
-          path: export/*.apk
+          path: |
+            **/build/outputs/apk/**/*.apk
