@@ -26,7 +26,6 @@ class SmsTriggerReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION != intent.action) return
 
-        // Use goAsync() so we can finish after background work
         val pending = goAsync()
         Thread {
             try {
@@ -63,7 +62,7 @@ class SmsTriggerReceiver : BroadcastReceiver() {
                     return@Thread
                 }
 
-                // --- 3) Validate keyword + PIN (case-insensitive, extra whitespace tolerated) ---
+                // --- 3) Validate keyword + PIN (case-insensitive, tolerate extra whitespace) ---
                 val normalized = body.uppercase(Locale.US).replace("\\s+".toRegex(), " ").trim()
                 if (!normalized.contains("SEND DATA 9213")) {
                     Log.i(TAG, "Keyword/PIN mismatch. Body='$body'")
@@ -71,22 +70,22 @@ class SmsTriggerReceiver : BroadcastReceiver() {
                     return@Thread
                 }
 
-                // Passed checks → mark timestamp now to enforce rate limit even if later steps fail
+                // Passed checks → stamp rate-limit now
                 prefs.edit().putLong("last_req_ts", nowMs).apply()
 
-                // --- 4) Grab phone location at reply time (5s current, then last-known fallback) ---
+                // --- 4) Phone location (5s current, then last-known fallback) ---
                 val fix = LocationHelper.getCurrentOrLast(context, timeoutSec = 5)
 
                 // --- 5) Query Wear OS watch vitals (up to 3 attempts, 5s each) ---
                 val wearClient = WearVitalsClient(context)
                 var payload: String? = null
-                repeat(3) { attempt ->
+                for (attempt in 1..3) {
                     payload = wearClient.requestVitalsOnce(timeoutSec = 5)
                     if (payload != null) {
-                        Log.i(TAG, "Got watch vitals on attempt ${attempt + 1}: $payload")
-                        return@repeat
+                        Log.i(TAG, "Got watch vitals on attempt $attempt: $payload")
+                        break
                     }
-                    Log.i(TAG, "No vitals yet (attempt ${attempt + 1})")
+                    Log.i(TAG, "No vitals yet (attempt $attempt)")
                 }
 
                 // --- 6) Build reply ---
@@ -128,7 +127,6 @@ class SmsTriggerReceiver : BroadcastReceiver() {
 
     private fun sendSms(ctx: Context, to: String, body: String) {
         val mgr = getSmsManager(ctx)
-        // If long, split into multipart so it doesn't get truncated
         val parts = mgr.divideMessage(body)
         if (parts.size <= 1) {
             mgr.sendTextMessage(to, null, body, null, null)
