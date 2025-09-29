@@ -1,38 +1,37 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-  <uses-feature android:name="android.hardware.type.watch" />
-  <uses-permission android:name="android.permission.BODY_SENSORS" />
-  <application android:label="WearProto" android:allowBackup="false">
-  <activity
-  android:name="com.example.wearproto.MainActivity"
-  android:exported="true">
-  <intent-filter>
-    <action android:name="android.intent.action.MAIN"/>
-    <category android:name="android.intent.category.LAUNCHER"/>
-  </intent-filter>
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.wearproto">
 
-<!-- Required to be listed as default SMS app -->
-        <intent-filter>
-            <action android:name="android.intent.action.SENDTO" />
-            <category android:name="android.intent.category.DEFAULT" />
-            <data android:scheme="sms" />
-            <data android:scheme="smsto" />
-        </intent-filter>    
-</activity>    
-    <service android:name=".WearMsgService" android:exported="true">
-      <intent-filter>
-        <action android:name="com.google.android.gms.wearable.BIND_LISTENER"/>
-      </intent-filter>
-    </service>
+    <!-- Wear OS device -->
+    <uses-feature android:name="android.hardware.type.watch" android:required="true" />
 
-<!-- Needed permissions -->
-    <uses-permission android:name="android.permission.RECEIVE_SMS"/>
-    <uses-permission android:name="android.permission.SEND_SMS"/>
-    <uses-permission android:name="android.permission.READ_SMS"/>
-  </application>
+    <!-- Watch-side runtime permissions you actually use -->
+    <uses-permission android:name="android.permission.BODY_SENSORS" />
+    <!-- Add if you read location on the watch -->
+    <!-- <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" /> -->
+
+    <application
+        android:label="WearProto"
+        android:allowBackup="false">
+
+        <!-- Launchable activity on the watch -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Wear OS data layer listener (phone<->watch messaging) -->
+        <service
+            android:name=".WearMsgService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
+            </intent-filter>
+        </service>
+
+    </application>
 </manifest>
-
-
-
-
-
-
