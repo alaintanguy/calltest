@@ -1,0 +1,49 @@
+class MainActivity : AppCompatActivity() {
+
+    private val perms = arrayOf(
+        Manifest.permission.RECEIVE_SMS,
+        Manifest.permission.SEND_SMS,
+        Manifest.permission.READ_SMS,
+        Manifest.permission.READ_CONTACTS
+    )
+
+    private val requestPerms = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val denied = results.filterValues { it == false }.keys
+        if (denied.isEmpty()) {
+            Toast.makeText(this, "All permissions granted", Toast.LENGTH_SHORT).show()
+        } else {
+            // If any permanently denied, suggest Settings
+            Toast.makeText(this, "Missing: ${denied.joinToString()}", Toast.LENGTH_LONG).show()
+            // Optionally open Settings:
+            // startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            //     data = Uri.fromParts("package", packageName, null)
+            // })
+        }
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // setContentView(R.layout.activity_main)
+
+        val missing = perms.filter {
+            ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (missing.isNotEmpty()) {
+            // Show a short rationale if needed
+            val needsRationale = missing.any { ActivityCompat.shouldShowRequestPermissionRationale(this, it) }
+            if (needsRationale) {
+                AlertDialog.Builder(this)
+                    .setTitle("Permissions needed")
+                    .setMessage("To auto-reply to the test message and restrict to Favorites, the app needs SMS and Contacts permissions.")
+                    .setPositiveButton("Continue") { _, _ -> requestPerms.launch(perms) }
+                    .setNegativeButton("Cancel", null)
+                    .show()
+            } else {
+                requestPerms.launch(perms)
+            }
+        }
+    }
+}
