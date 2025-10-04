@@ -29,6 +29,9 @@ class SmsTriggerReceiver : BroadcastReceiver() {
 
                 val from = msg.originatingAddress ?: continue
                 val body = msg.messageBody ?: continue
+                // 🔧 FALLBACK: reply to ANY SMS (temporary diagnostic)
+sendReplySafely(context, from, "AUTO: got your message")
+continue  // or 'return' if you only process the first PDU
 
                 Log.i(TAG, "SMS from=$from body=\"$body\"")
 
@@ -69,3 +72,4 @@ class SmsTriggerReceiver : BroadcastReceiver() {
         val CMD_REGEX = Regex("""^\s*send\s+data\s+9213\s*$""", RegexOption.IGNORE_CASE)
     }
 }
+
